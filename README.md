@@ -1,2 +1,2 @@
-# vistadocs.github.io
-vista docs
+# vista-docs.github.io
+vista documentation
