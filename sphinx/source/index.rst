@@ -11,6 +11,7 @@ Welcome to sphinx-pdf's documentation!
    :caption: Contents:
 
    sample-chapter
+   editing-cycle
 
 
 
