@@ -104,17 +104,16 @@
     <thead>
       <tr>
         <th>Section</th>
+        <th>System Type</th>
         <th>Package</th>
         <th>Doc Type</th>
         <th>Status</th>
         <th>Format</th>
         <th>Layer</th>
         <th>Document Title</th>
-        <th>Full Name</th>
-        <th>Patch</th>
       </tr>
       <tr class="filter-row">
-        <th></th><th></th><th></th><th></th><th></th>
+        <th></th><th></th><th></th><th></th>
         <th></th><th></th><th></th><th></th>
       </tr>
     </thead>
@@ -133,14 +132,13 @@
 // type 'select' = exact-match dropdown, 'text' = substring text input
 var COLS = [
   { title: 'Section',        field: 'section_name',    type: 'select' },
+  { title: 'System Type',    field: 'system_type',     type: 'select' },
   { title: 'Package',        field: 'app_name_abbrev', type: 'select' },
   { title: 'Doc Type',       field: 'doc_label',       type: 'select' },
   { title: 'Status',         field: 'app_status',      type: 'select' },
   { title: 'Format',         field: 'doc_format',      type: 'select' },
   { title: 'Layer',          field: 'doc_layer',       type: 'select' },
-  { title: 'Document Title', field: 'doc_title',       type: 'none'   },
-  { title: 'Full Name',      field: 'app_name_full',   type: 'none'   },
-  { title: 'Patch',          field: 'patch_id',        type: 'none'   },
+  { title: 'Document Title', field: 'doc_title',       type: 'text'   },
 ];
 
 Papa.parse('vdl_inventory_enriched.csv', {
@@ -200,10 +198,10 @@ Papa.parse('vdl_inventory_enriched.csv', {
       columns: dtColumns,
       pageLength: 50,
       lengthMenu: [25, 50, 100, 250],
-      order: [[1, 'asc'], [6, 'asc']],
+      order: [[2, 'asc'], [7, 'asc']],
       dom: 'Blfrtip',
       buttons: [{ extend: 'colvis', text: 'Show/hide columns' }],
-      columnDefs: [{ targets: [7, 8], visible: false }],
+      columnDefs: [],
       language: { search: 'Search all:', lengthMenu: 'Show _MENU_ rows' },
 
       orderCellsTop: true,
