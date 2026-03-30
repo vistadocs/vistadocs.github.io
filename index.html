@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VistA Documentation Library</title>
+
+  <link rel="stylesheet" href="https://cdn.datatables.net/2.0.8/css/dataTables.dataTables.min.css">
+  <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.0.2/css/buttons.dataTables.min.css">
+
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      font-size: 14px;
+      margin: 0;
+      padding: 16px 24px;
+      background: #f8f9fa;
+      color: #212529;
+    }
+
+    h1 { font-size: 1.4rem; margin: 0 0 4px 0; color: #003366; }
+
+    #subtitle { color: #666; margin: 0 0 16px 0; font-size: 0.875rem; }
+
+    #loading { padding: 40px; text-align: center; color: #666; }
+
+    #table-wrap {
+      display: none;
+      background: white;
+      border-radius: 6px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+      padding: 16px;
+    }
+
+    table.dataTable thead tr:first-child th {
+      background: #003366;
+      color: white;
+      white-space: nowrap;
+    }
+
+    table.dataTable thead tr.filter-row th {
+      background: #e8edf5;
+      padding: 4px 6px;
+      font-weight: normal;
+    }
+
+    table.dataTable thead tr.filter-row input,
+    table.dataTable thead tr.filter-row select {
+      width: 100%;
+      font-size: 12px;
+      padding: 3px 4px;
+      border: 1px solid #bbb;
+      border-radius: 3px;
+    }
+
+    table.dataTable tbody tr:hover { background: #eef4ff !important; }
+
+    table.dataTable td {
+      vertical-align: top;
+      max-width: 320px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    td.wrap { white-space: normal; word-break: break-word; }
+
+    a { color: #0057b8; }
+    a:hover { color: #003d82; }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 7px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .badge-active        { background: #d1f0dc; color: #155724; }
+    .badge-archive       { background: #fff3cd; color: #856404; }
+    .badge-decommissioned { background: #f8d7da; color: #721c24; }
+
+    .dt-buttons { margin-bottom: 8px; }
+    .dt-button {
+      font-size: 12px !important;
+      padding: 4px 10px !important;
+      border-radius: 4px !important;
+      border: 1px solid #ccc !important;
+      background: #fff !important;
+      cursor: pointer;
+    }
+    .dt-button:hover { background: #f0f0f0 !important; }
+  </style>
+</head>
+<body>
+
+<h1>VistA Documentation Library</h1>
+<p id="subtitle">Loading&hellip;</p>
+<div id="loading">Loading inventory&hellip;</div>
+
+<div id="table-wrap">
+  <table id="vdl" class="display" style="width:100%">
+    <thead>
+      <tr>
+        <th>Section</th>
+        <th>Package</th>
+        <th>Doc Type</th>
+        <th>Status</th>
+        <th>Format</th>
+        <th>Layer</th>
+        <th>Document Title</th>
+        <th>Full Name</th>
+        <th>Patch</th>
+      </tr>
+      <tr class="filter-row">
+        <th></th><th></th><th></th><th></th><th></th>
+        <th></th><th></th><th></th><th></th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.datatables.net/2.0.8/js/dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/3.0.2/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/3.0.2/js/buttons.colVis.min.js"></script>
+
+<script>
+// Column definitions — order matches thead
+// type 'select' = exact-match dropdown, 'text' = substring text input
+var COLS = [
+  { title: 'Section',        field: 'section_name',    type: 'select' },
+  { title: 'Package',        field: 'app_name_abbrev', type: 'select' },
+  { title: 'Doc Type',       field: 'doc_label',       type: 'select' },
+  { title: 'Status',         field: 'app_status',      type: 'select' },
+  { title: 'Format',         field: 'doc_format',      type: 'select' },
+  { title: 'Layer',          field: 'doc_layer',       type: 'select' },
+  { title: 'Document Title', field: 'doc_title',       type: 'none'   },
+  { title: 'Full Name',      field: 'app_name_full',   type: 'none'   },
+  { title: 'Patch',          field: 'patch_id',        type: 'none'   },
+];
+
+Papa.parse('vdl_inventory_enriched.csv', {
+  download: true,
+  header: true,
+  skipEmptyLines: true,
+  complete: function(results) {
+    var rows = results.data;
+
+    // Pre-compute sorted unique values for select columns from raw data
+    var uniqueVals = {};
+    COLS.forEach(function(col) {
+      if (col.type !== 'select') return;
+      var seen = {};
+      rows.forEach(function(r) {
+        var v = (col.field === 'doc_label' ? (r.doc_label || r.doc_code) : r[col.field]) || '';
+        if (v) seen[v] = true;
+      });
+      uniqueVals[col.field] = Object.keys(seen).sort();
+    });
+
+    // Build DataTables column config using orthogonal data:
+    //   display = HTML, filter = plain text (so column.search() works correctly)
+    var dtColumns = COLS.map(function(col) {
+      return {
+        data: null,
+        defaultContent: '',
+        render: function(row, type) {
+          var raw = col.field === 'doc_label'
+            ? (row.doc_label || row.doc_code || '')
+            : (row[col.field] || '');
+
+          // For sorting and filtering, return plain text
+          if (type !== 'display') return raw;
+
+          // Display rendering
+          if (col.field === 'app_status') {
+            var cls = { active: 'badge-active', archive: 'badge-archive',
+                        decommissioned: 'badge-decommissioned' }[raw] || '';
+            return '<span class="badge ' + cls + '">' + esc(raw) + '</span>';
+          }
+          if (col.field === 'app_name_abbrev') {
+            return '<strong>' + esc(raw) + '</strong>';
+          }
+          if (col.field === 'doc_title') {
+            return row.doc_url
+              ? '<a href="' + esc(row.doc_url) + '" target="_blank" rel="noopener">' + esc(raw) + '</a>'
+              : esc(raw);
+          }
+          return esc(raw);
+        }
+      };
+    });
+
+    var table = $('#vdl').DataTable({
+      data: rows,
+      columns: dtColumns,
+      pageLength: 50,
+      lengthMenu: [25, 50, 100, 250],
+      order: [[1, 'asc'], [6, 'asc']],
+      dom: 'Blfrtip',
+      buttons: [{ extend: 'colvis', text: 'Show/hide columns' }],
+      columnDefs: [{ targets: [7, 8], visible: false }],
+      language: { search: 'Search all:', lengthMenu: 'Show _MENU_ rows' },
+
+      orderCellsTop: true,
+      initComplete: function() {
+        var api = this.api();
+
+        // Sync filter-row cell visibility with column visibility
+        function syncFilterRow() {
+          api.columns().every(function(i) {
+            var th = $($('#vdl thead tr.filter-row th').get(i));
+            this.visible() ? th.show() : th.hide();
+          });
+        }
+        syncFilterRow();
+        api.on('column-visibility.dt', syncFilterRow);
+
+        COLS.forEach(function(col, i) {
+          var tf = $($('#vdl thead tr.filter-row th').get(i));
+
+          if (col.type === 'select') {
+            var sel = $('<select><option value="">All</option></select>');
+            uniqueVals[col.field].forEach(function(v) {
+              sel.append($('<option>').val(v).text(v));
+            });
+            sel.appendTo(tf).on('change', function() {
+              var val = $(this).val();
+              // Exact match: anchor the regex so "patch" doesn't match "patch-123"
+              api.column(i).search(val ? '^' + $.fn.dataTable.util.escapeRegex(val) + '$' : '', true, false).draw();
+            });
+
+          } else {
+            $('<input type="text" placeholder="filter…">')
+              .appendTo(tf)
+              .on('keyup change clear', function() {
+                api.column(i).search(this.value).draw();
+              });
+          }
+        });
+      }
+    });
+
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('table-wrap').style.display = 'block';
+    document.getElementById('subtitle').textContent =
+      rows.length.toLocaleString() + ' documents across ' +
+      new Set(rows.map(function(r) { return r.app_name_abbrev; })).size + ' packages';
+  },
+
+  error: function(err) {
+    document.getElementById('loading').textContent = 'Error loading CSV: ' + err;
+  }
+});
+
+function esc(s) {
+  return String(s || '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+</script>
+</body>
+</html>
