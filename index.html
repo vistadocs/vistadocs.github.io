@@ -103,8 +103,8 @@
   <table id="vdl" class="display" style="width:100%">
     <thead>
       <tr>
-        <th>Section</th>
         <th>System Type</th>
+        <th>Section</th>
         <th>Package</th>
         <th>Doc Type</th>
         <th>Status</th>
@@ -131,8 +131,8 @@
 // Column definitions — order matches thead
 // type 'select' = exact-match dropdown, 'text' = substring text input
 var COLS = [
-  { title: 'Section',        field: 'section_name',    type: 'select' },
   { title: 'System Type',    field: 'system_type',     type: 'select' },
+  { title: 'Section',        field: 'section_name',    type: 'select' },
   { title: 'Package',        field: 'app_name_abbrev', type: 'select' },
   { title: 'Doc Type',       field: 'doc_label',       type: 'select' },
   { title: 'Status',         field: 'app_status',      type: 'select' },
@@ -198,7 +198,7 @@ Papa.parse('vdl_inventory_enriched.csv', {
       columns: dtColumns,
       pageLength: 50,
       lengthMenu: [25, 50, 100, 250],
-      order: [[2, 'asc'], [7, 'asc']],
+      order: [[0, 'asc'], [2, 'asc']],
       dom: 'Blfrtip',
       buttons: [{ extend: 'colvis', text: 'Show/hide columns' }],
       columnDefs: [],
